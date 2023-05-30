@@ -1,0 +1,6 @@
+numpy
+glob2
+opencv-python
+keyboard
+tensorflow
+pyglet
