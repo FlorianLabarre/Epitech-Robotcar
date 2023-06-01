@@ -13,8 +13,10 @@ import tensorflow as tf
 from utils import DataGenerator, flip, noise
 
 path = os.path.dirname(os.path.abspath(__file__))
-data_path = os.path.join(path, 'data')
+images_path = os.path.join(path, 'data/images')
+json_path = os.path.join(path, 'data')
 
+# print(data_path)
 
 def build_model() -> tf.keras.Model:
     """
@@ -82,7 +84,7 @@ def predict(model, data_path):
         return float(x.split(os.path.sep)[-1].split(".")[0])
 
     img_paths = sorted(glob.glob(os.path.join(
-        data_path, "*.png")), key=sort_func)
+        data_path, "*.jpg")), key=sort_func)
 
     for path in img_paths:
         img = cv2.imread(path)
@@ -105,7 +107,7 @@ if __name__ == "__main__":
     model.summary()
 
     # if you have not implemented any transform funcs yet, just put an empty list []
-    datagen = DataGenerator(data_path, [flip, noise], batch_size=32)
+    datagen = DataGenerator(images_path, json_path, [flip, noise], batch_size=32)
 
     # if the traning takes too much time, you can try to reduce the batch_size and the number of epochs
     train_model(model, datagen, epochs=100)
