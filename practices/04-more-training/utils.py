@@ -12,17 +12,19 @@ import numpy as np
 from tensorflow.keras.utils import Sequence
 
 
-def load_image_and_json(img_path, json_path):
+def load_image_and_json(img_path, json_path, i):
     """
     Load the image using img_path, load the json data using json_path,
     return both as a tuple (image, json_data)
     """
     img = cv2.imread(img_path)
 
-    with open(os.path.normpath(json_path), "r") as json_file:
-        json_data = json.load(json_file)
-
-    return img, json_data
+    result = []
+    with open(json_path, 'r') as file:
+        lines = file.readlines()        
+    for line in lines:
+        result.append(json.loads(line))
+    return img, (result[i])
 
 
 class DataGenerator(Sequence):
@@ -48,17 +50,18 @@ class DataGenerator(Sequence):
         self.transform_funcs = transform_funcs
         self.batch_size = batch_size
 
-        self.image_paths = glob.glob(os.path.join(data_directory, "*.png"))
-        self.json_paths = glob.glob(os.path.join(data_directory, "*.json"))
+        images_path = data_directory + "/images"
+        print(images_path)
+        self.image_paths = glob.glob(os.path.join(images_path, "*.jpg"))
+        self.json_paths = glob.glob(os.path.join(data_directory, "*.catalog"))
         assert len(self.image_paths) > 0, "no images in directory were found"
-        assert len(self.image_paths) == len(
-            self.json_paths), f"number of X and Y missmatch {len(self.image_paths)} {len(self.json_paths)}"
-        self.length = len(self.image_paths)
 
+        self.length = len(self.image_paths)
         # just check that every img / json paths does match
+
         for (img_p, json_p) in zip(self.image_paths, self.json_paths):
-            img_name = img_p.split(os.path.sep)[-1].split(".png")[0]
-            json_name = json_p.split(os.path.sep)[-1].split(".json")[0]
+            img_name = img_p.split(os.path.sep)[-1].split(".jpg")[0]
+            json_name = json_p.split(os.path.sep)[-1].split(".catalog")[0]
 
             assert img_name, json_name
 
@@ -73,17 +76,18 @@ class DataGenerator(Sequence):
 
         X = []
         Y = []
+        Z = []
 
         list = np.random.randint(0, self.length, size=self.batch_size)
         for i in list:
             img_path = self.image_paths[i]
-            json_path = self.json_paths[i]
-            image, data = load_image_and_json(img_path, json_path)
+            json_path = self.json_paths[0]
+            image, data = load_image_and_json(img_path, json_path, i)
 
             for func in self.transform_funcs:
                 image, data = func(image, data)
             X.append(image)
-            Y.append(data["steering"])
+            Y.append([data["user/angle"], data["user/throttle"]])
         X = np.array(X) / 255
         Y = np.array(Y)
 
@@ -112,7 +116,7 @@ def flip(image: np.ndarray, data: dict):
 
     rand = np.random.random()
     if rand < 0.5: # 50%
-        data["steering"] = data["steering"] * -1
+        data["user/angle"] = data["user/angle"] * -1
         image = cv2.flip(image, 1)
 
     return image, data

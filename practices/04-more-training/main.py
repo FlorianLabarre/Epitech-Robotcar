@@ -40,7 +40,7 @@ def build_model() -> tf.keras.Model:
     x = tf.keras.layers.Dense(128, activation="relu")(x)
     x = tf.keras.layers.Dense(64, activation="relu")(x)
     x = tf.keras.layers.Dense(32, activation="relu")(x)
-    out = tf.keras.layers.Dense(1, activation="tanh")(x)
+    out = tf.keras.layers.Dense(2, activation="tanh")(x)
     model = tf.keras.Model(inputs=inputs, outputs=out)
     model.compile(
         optimizer="adam",
