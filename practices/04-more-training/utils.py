@@ -19,12 +19,12 @@ def load_image_and_json(img_path, json_path, i):
     """
     img = cv2.imread(img_path)
 
-    result = []
     with open(json_path, 'r') as file:
         lines = file.readlines()        
     for line in lines:
-        result.append(json.loads(line))
-    return img, (result[i])
+        table = json.loads(line)
+        if (img_path.split("/")[-1] == table['cam/image_array']):
+            return img, table
 
 
 class DataGenerator(Sequence):
@@ -82,6 +82,7 @@ class DataGenerator(Sequence):
         for i in list:
             img_path = self.image_paths[i]
             json_path = self.json_paths[0]
+            print(self.json_paths)
             image, data = load_image_and_json(img_path, json_path, i)
 
             for func in self.transform_funcs:
