@@ -11,20 +11,25 @@ import cv2
 import numpy as np
 from tensorflow.keras.utils import Sequence
 
+def load_jsons(jsons_path):
+    lines = []
+    for json_path in jsons_path:
+        with open(json_path, 'r') as file:
+            lines = lines + file.readlines()
+    return lines
 
-def load_image_and_json(img_path, json_path, i):
+def load_image_and_get_json(img_path, json_path, i):
     """
     Load the image using img_path, load the json data using json_path,
     return both as a tuple (image, json_data)
     """
     img = cv2.imread(img_path)
 
-    with open(json_path, 'r') as file:
-        lines = file.readlines()        
-    for line in lines:
+    for line in json_path:
         table = json.loads(line)
         if (img_path.split("/")[-1] == table['cam/image_array']):
             return img, table
+    raise ValueError("Value not find!")
 
 
 class DataGenerator(Sequence):
@@ -79,11 +84,11 @@ class DataGenerator(Sequence):
         Z = []
 
         list = np.random.randint(0, self.length, size=self.batch_size)
+        result = load_jsons(self.json_paths)
         for i in list:
             img_path = self.image_paths[i]
             json_path = self.json_paths[0]
-            print(self.json_paths)
-            image, data = load_image_and_json(img_path, json_path, i)
+            image, data = load_image_and_get_json(img_path, result, i)
 
             for func in self.transform_funcs:
                 image, data = func(image, data)
