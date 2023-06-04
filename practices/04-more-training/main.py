@@ -105,10 +105,12 @@ if __name__ == "__main__":
     model.summary()
 
     # if you have not implemented any transform funcs yet, just put an empty list []
-    datagen = DataGenerator(data_path, [flip, noise], batch_size=32)
+    datagen = DataGenerator(data_path, [], batch_size=64)
 
     # if the traning takes too much time, you can try to reduce the batch_size and the number of epochs
+    # tf.profiler.experimental.start('logs')
     train_model(model, datagen, epochs=100)
+    # tf.profiler.experimental.stop()
 
-    model.save("trained_model3.h5")
+    model.save("trained_model.h5")
     # predict(model, data_path)
