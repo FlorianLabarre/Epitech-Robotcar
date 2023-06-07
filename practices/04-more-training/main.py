@@ -105,7 +105,7 @@ if __name__ == "__main__":
     model.summary()
 
     # if you have not implemented any transform funcs yet, just put an empty list []
-    datagen = DataGenerator(data_path, [], batch_size=64)
+    datagen = DataGenerator(data_path, [], batch_size=32)
 
     # if the traning takes too much time, you can try to reduce the batch_size and the number of epochs
     # tf.profiler.experimental.start('logs')
