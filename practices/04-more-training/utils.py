@@ -79,19 +79,27 @@ class DataGenerator(Sequence):
 
         X = []
         Y = []
+        Z = []
+        index = []
 
-        list = np.random.randint(0, self.length, size=self.batch_size)
-        for i in list:
+        l = np.random.randint(0, self.length, size=self.batch_size)
+        for i in l:
             img_path = self.image_paths[i]
             table = self.result[i]
             image, data = load_image_and_get_json(img_path, table, i)
 
             for func in self.transform_funcs:
                 image, data = func(image, data)
-            X += [image]
-            Y += [[data["user/angle"], data["user/throttle"]]]
-        X = np.array(X) / 255
+            X.append(image)
+            # X += [image]
+            # Y += [data["user/angle"]]
+            Y.append(data["user/angle"])
+            # Z += [0.3]
+            # Z += [data["user/throttle"]]
+            # Z.append(data["user/throttle"])
+        X = np.array(X) / 255.0
         Y = np.array(Y)
+        # Z = np.array(Z)
 
         return X, Y
 
