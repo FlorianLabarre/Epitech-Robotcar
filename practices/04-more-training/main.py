@@ -15,7 +15,6 @@ from utils import DataGenerator, flip, noise
 path = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(path, 'data')
 
-
 def build_model() -> tf.keras.Model:
     """
     Build a simple CNN model: stack some layers and compile it, please mind the size of the model.
@@ -29,19 +28,27 @@ def build_model() -> tf.keras.Model:
 
     For the model compilation, use adam optimizer and mse loss.
     """
-    inputs = tf.keras.Input(shape=(120,160,3))
+    inputs = tf.keras.Input(shape=(180,240,3))
+    # x = tf.keras.layers.Cropping2D(cropping=((0, 100), (0, 0)))(inputs)
     x = tf.keras.layers.Conv2D(16, 3, 2, activation="relu")(inputs)
+    # x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.Conv2D(32, 3, 2, activation="relu")(x)
+    # x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.Conv2D(48, 3, 2, activation="relu")(x)
+    # x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.Conv2D(64, 3, 2, activation="relu")(x)
+    # x = tf.keras.layers.BatchNormalization()(x)
 
     x = tf.keras.layers.Flatten()(x)
 
-    x = tf.keras.layers.Dense(128, activation="relu")(x)
+    # x = tf.keras.layers.Dense(128, activation="relu")(x)
     x = tf.keras.layers.Dense(64, activation="relu")(x)
     x = tf.keras.layers.Dense(32, activation="relu")(x)
-    out = tf.keras.layers.Dense(1, activation="tanh")(x)
-    model = tf.keras.Model(inputs=inputs, outputs=out)
+    x = tf.keras.layers.Dense(16, activation="relu")(x)
+    angle = tf.keras.layers.Dense(1, activation="tanh", name="angle")(x)
+    # x = tf.keras.layers.Dense(16, activation="relu")(angle)
+    # throttle = tf.keras.layers.Dense(1, activation="sigmoid", name="throttle")(x)
+    model = tf.keras.Model(inputs=inputs, outputs=angle)
     model.compile(
         optimizer="adam",
         loss="mse",
@@ -98,9 +105,8 @@ def predict(model, data_path):
         cv2.imshow("img", img)
         cv2.waitKey(1)
 
-
 if __name__ == "__main__":
-    # model = load_model("trained_model.h5")
+    # model = load_model("trained_model_30_320p.h5")
     model = build_model()
     model.summary()
 
@@ -108,7 +114,9 @@ if __name__ == "__main__":
     datagen = DataGenerator(data_path, [flip, noise], batch_size=32)
 
     # if the traning takes too much time, you can try to reduce the batch_size and the number of epochs
+    # tf.profiler.experimental.start('logs')
     train_model(model, datagen, epochs=100)
+    # tf.profiler.experimental.stop()
 
-    model.save("trained_model3.h5")
+    model.save("trained_model_hub.h5")
     # predict(model, data_path)
