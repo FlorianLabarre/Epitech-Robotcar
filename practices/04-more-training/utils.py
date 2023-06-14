@@ -160,3 +160,15 @@ def fast_darkest(input_image, data: dict):
     img = input_image.copy()
     cv2.convertScaleAbs(img, img, 1, 50)
     return img, data
+
+def saturation(image, data):
+    image = image.astype(np.float32)  # Convert to float32
+    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+    hsv_image[..., 1] = hsv_image[..., 1] * 1.5
+    sat_image = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
+    return sat_image, data
+
+def blur(image, data):
+    blurred_image = cv2.GaussianBlur(image, (5, 5), 0)
+    return blurred_image, data
+
