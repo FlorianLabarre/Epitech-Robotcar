@@ -10,7 +10,7 @@ import cv2
 import numpy as np
 import tensorflow as tf
 # also imports your data-augmentation functions here
-from utils import DataGenerator, flip, noise
+from utils import DataGenerator, flip, noise, fast_clear, fast_darkest
 
 path = os.path.dirname(os.path.abspath(__file__))
 data_path = os.path.join(path, 'data')
@@ -111,7 +111,7 @@ if __name__ == "__main__":
     model.summary()
 
     # if you have not implemented any transform funcs yet, just put an empty list []
-    datagen = DataGenerator(data_path, [flip, noise], batch_size=32)
+    datagen = DataGenerator(data_path, [flip, noise, fast_clear, fast_darkest], batch_size=32)
 
     # if the traning takes too much time, you can try to reduce the batch_size and the number of epochs
     # tf.profiler.experimental.start('logs')

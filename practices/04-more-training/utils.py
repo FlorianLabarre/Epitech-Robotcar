@@ -140,3 +140,23 @@ def noise(image: np.ndarray, data: dict, mult=10):
         image = image + noise # not perfect, here there could be some unsigned overflow 
 
     return image, data
+
+def fast_clear(input_image, data: dict):
+    ''' input_image:  color or grayscale image
+        brightness:  -255 (all black) to +255 (all white)
+
+        returns image of same type as input_image but with
+        brightness adjusted'''
+    img = input_image.copy()
+    cv2.convertScaleAbs(img, img, 1, -50)
+    return img, data
+
+def fast_darkest(input_image, data: dict):
+    ''' input_image:  color or grayscale image
+        brightness:  -255 (all black) to +255 (all white)
+
+        returns image of same type as input_image but with
+        brightness adjusted'''
+    img = input_image.copy()
+    cv2.convertScaleAbs(img, img, 1, 50)
+    return img, data
