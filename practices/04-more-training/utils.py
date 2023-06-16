@@ -19,7 +19,7 @@ def load_jsons(jsons_path):
             lines += file.readlines()
     return lines
 
-def load_image_and_get_json(img_path, table, i):
+def load_image_and_get_json(img_path, table, i, res):
     """
     Load the image using img_path, load the json data using json_path,
     return both as a tuple (image, json_data)
@@ -28,7 +28,7 @@ def load_image_and_get_json(img_path, table, i):
 
     if (img_path.split("/")[-1] == table['cam/image_array']):
         return img, table
-    raise ValueError("Value not find!")
+    raise ValueError("Value not find! ", i, img_path, table['cam/image_array'], res[i-1]['cam/image_array'], res[i]['cam/image_array'], res[i+1]['cam/image_array'])
 
 class DataGenerator(Sequence):
     def __init__(
@@ -56,8 +56,13 @@ class DataGenerator(Sequence):
         images_path = data_directory + "/images"
         self.image_paths = sorted(glob.glob(os.path.join(images_path, "*.jpg")), key=lambda x:float(re.findall("(\d+)",x.split('/')[-1])[0]))
         self.json_paths = sorted(glob.glob(os.path.join(data_directory, "*.catalog")), key=lambda x:float(re.findall("(\d+)",x.split('/')[-1])[0]))
+        manifest = glob.glob(os.path.join(data_directory, "*.json"))
         assert len(self.image_paths) > 0, "no images in directory were found"
         self.result = list(map(json.loads, load_jsons(self.json_paths)))
+        self.skip = sorted(json.loads(load_jsons(manifest)[-1])["deleted_indexes"], reverse=True)
+        for i in self.skip:
+            del self.image_paths[i]
+            del self.result[i]
         self.length = len(self.image_paths)
         self.len = self.length // self.batch_size + 1
         # just check that every img / json paths does match
@@ -86,7 +91,7 @@ class DataGenerator(Sequence):
         for i in l:
             img_path = self.image_paths[i]
             table = self.result[i]
-            image, data = load_image_and_get_json(img_path, table, i)
+            image, data = load_image_and_get_json(img_path, table, i, self.result)
 
             for func in self.transform_funcs:
                 image, data = func(image, data)
@@ -97,7 +102,7 @@ class DataGenerator(Sequence):
             # Z += [0.3]
             # Z += [data["user/throttle"]]
             # Z.append(data["user/throttle"])
-        X = np.array(X) / 255.0
+        X = np.array(X) / 255
         Y = np.array(Y)
         # Z = np.array(Z)
 
@@ -126,7 +131,7 @@ def flip(image: np.ndarray, data: dict):
     rand = np.random.random()
     if rand < 0.5: # 50%
         data["user/angle"] = data["user/angle"] * -1
-        image = cv2.flip(image, 1)
+        image = cv2.flip(image, 0)
 
     return image, data
 
@@ -147,9 +152,10 @@ def fast_clear(input_image, data: dict):
 
         returns image of same type as input_image but with
         brightness adjusted'''
-    img = input_image.copy()
-    cv2.convertScaleAbs(img, img, 1, -50)
-    return img, data
+    rand = np.random.random()
+    if rand < 0.1: # 10%
+        cv2.convertScaleAbs(input_image, input_image, 1, -50)
+    return input_image, data
 
 def fast_darkest(input_image, data: dict):
     ''' input_image:  color or grayscale image
@@ -157,18 +163,23 @@ def fast_darkest(input_image, data: dict):
 
         returns image of same type as input_image but with
         brightness adjusted'''
-    img = input_image.copy()
-    cv2.convertScaleAbs(img, img, 1, 50)
-    return img, data
+    rand = np.random.random()
+    if rand < 0.1: # 10%
+        cv2.convertScaleAbs(input_image, input_image, 1, 50)
+    return input_image, data
 
 def saturation(image, data):
-    image = image.astype(np.float32)  # Convert to float32
-    hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-    hsv_image[..., 1] = hsv_image[..., 1] * 1.5
-    sat_image = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
-    return sat_image, data
+    rand = np.random.random()
+    if rand < 0.1: # 10%
+        image = image.astype(np.float32)  # Convert to float32
+        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
+        hsv_image[..., 1] = hsv_image[..., 1] * 1.5
+        image = cv2.cvtColor(hsv_image, cv2.COLOR_HSV2BGR)
+    return image, data
 
 def blur(image, data):
-    blurred_image = cv2.GaussianBlur(image, (5, 5), 0)
-    return blurred_image, data
+    rand = np.random.random()
+    if rand < 0.1: # 10%
+        image = cv2.GaussianBlur(image, (5, 5), 0)
+    return image, data
 

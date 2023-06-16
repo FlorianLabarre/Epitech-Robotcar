@@ -29,22 +29,25 @@ def build_model() -> tf.keras.Model:
     For the model compilation, use adam optimizer and mse loss.
     """
     inputs = tf.keras.Input(shape=(180,240,3))
-    # x = tf.keras.layers.Cropping2D(cropping=((0, 100), (0, 0)))(inputs)
-    x = tf.keras.layers.Conv2D(16, 3, 2, activation="relu")(inputs)
-    # x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.Cropping2D(((67,0), (0,0)))(inputs)
+    x = tf.keras.layers.Conv2D(16, 3, 2, activation="relu")(x)
+    x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.Conv2D(32, 3, 2, activation="relu")(x)
-    # x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.Conv2D(48, 3, 2, activation="relu")(x)
-    # x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.BatchNormalization()(x)
     x = tf.keras.layers.Conv2D(64, 3, 2, activation="relu")(x)
-    # x = tf.keras.layers.BatchNormalization()(x)
+    x = tf.keras.layers.BatchNormalization()(x)
 
     x = tf.keras.layers.Flatten()(x)
 
     # x = tf.keras.layers.Dense(128, activation="relu")(x)
     x = tf.keras.layers.Dense(64, activation="relu")(x)
+    x = tf.keras.layers.Dropout(0.25)(x)
     x = tf.keras.layers.Dense(32, activation="relu")(x)
+    x = tf.keras.layers.Dropout(0.25)(x)
     x = tf.keras.layers.Dense(16, activation="relu")(x)
+    x = tf.keras.layers.Dropout(0.25)(x)
     angle = tf.keras.layers.Dense(1, activation="tanh", name="angle")(x)
     # x = tf.keras.layers.Dense(16, activation="relu")(angle)
     # throttle = tf.keras.layers.Dense(1, activation="sigmoid", name="throttle")(x)
@@ -64,10 +67,14 @@ def train_model(model: tf.keras.Model, datagen: DataGenerator, epochs=10):
     (Bonus) It is also a good idea to use a test_datagen to monitor the performance of the model on unseen data.
     In order to do that, you would have to create a new DataGenerator object with a different data directory.
     """
+    reduce_lr = tf.keras.callbacks.ReduceLROnPlateau(monitor='loss', factor=0.2,
+                              patience=5)
+    es_callback = tf.keras.callbacks.EarlyStopping(monitor='loss', patience=3, restore_best_weights=True)
     model.fit(
         datagen,
         steps_per_epoch=len(datagen),
         epochs=epochs,
+        callbacks=[reduce_lr,es_callback]
     )
 
 
@@ -84,16 +91,16 @@ def predict(model, data_path):
     hint: you can use cv2 to display the images
     You can also draw a visualisation of the steering angle on the image.
     """
-
+    print(data_path)
     def sort_func(x):
-        return float(x.split(os.path.sep)[-1].split(".")[0])
+        return float(x.split(os.path.sep)[-1].split("_")[0])
 
     img_paths = sorted(glob.glob(os.path.join(
-        data_path, "*.png")), key=sort_func)
+        data_path, "*.jpg")), key=sort_func)
 
     for path in img_paths:
         img = cv2.imread(path)
-        img = cv2.resize(img, (160, 120))
+        img = cv2.resize(img, (240, 180))
         x = img / 255.0
         x = np.expand_dims(x, axis=0)
         pred = model(x)[0][0]
@@ -106,17 +113,17 @@ def predict(model, data_path):
         cv2.waitKey(1)
 
 if __name__ == "__main__":
-    # model = load_model("trained_model_30_320p.h5")
-    model = build_model()
+    model = load_model("trained_model_hub_16_06_1st_darkest_clear_64_crop_67_reduce_loss.h5") #-- visuel
+    # model = build_model()
     model.summary()
 
     # if you have not implemented any transform funcs yet, just put an empty list []
-    datagen = DataGenerator(data_path, [flip, noise, fast_clear, fast_darkest, saturation, blur], batch_size=32)
+    datagen = DataGenerator(data_path, [noise], batch_size=64)
 
     # if the traning takes too much time, you can try to reduce the batch_size and the number of epochs
     # tf.profiler.experimental.start('logs')
-    train_model(model, datagen, epochs=100)
+    train_model(model, datagen, epochs=40)
     # tf.profiler.experimental.stop()
 
-    model.save("trained_model_hub.h5")
-    # predict(model, data_path)
+    model.save("trained_model_hub_16_06_1st_darkest_clear_64_crop_67_reduce_loss.h5")
+    # predict(model, "/home/guigui/Epitech-Robotcar/practices/04-more-training/data_test/data/images") #-- visuel
